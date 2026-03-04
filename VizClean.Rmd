@@ -1,0 +1,113 @@
+---
+title: "VizClean"
+author: "Mercy Neal"
+date: "2025-11-20"
+output: html_document
+---
+Now data and packages are prepared, let's quickly summarise our inputs. 
+
+```{r}
+pathogeninput <- ggplot(testpathconc, aes(x = concentration, fill = compound)) +  geom_histogram(position = "stack", bins = 50) + theme_classic(16) + 
+  theme() +
+  labs(title = "Input Pathogen Concentrations",
+       x = "Concentration (CFU/L)",
+       y = "Count",
+       fill = "Category") +
+  scale_fill_brewer(palette = "Spectral")
+pathogeninput
+
+cheminput <- ggplot(testdbpconc, aes(x = concentration, fill = compound)) +  geom_histogram(position = "stack", bins = 50) + theme_classic(16)  + 
+  theme(text = element_text(family = 'serif'),
+        plot.title = element_text(size = 16), 
+        axis.title = element_text(size = 12), 
+        axis.text = element_text(size = 10),
+        legend.text = element_text(face = 'italic', size = 10),
+        legend.title = element_text(face = 'bold', size = 12)) + 
+  labs(title = "Input Chemical Concentrations",
+       x = "Concentration (mg/L)",
+       y = "Count per Bin",
+       fill = "Category") + 
+  scale_fill_brewer( palette = "Spectral")
+
+cheminput
+```
+
+
+```{r}
+##Summaries for Viz
+
+full_frame <- data.frame(probs, chemprob)
+# Combine all DALY vectors into a single data frame
+daly_df <- data.frame(
+  sampleno = full_frame$sample,
+  totaldaly = probs$DALY + chemprob$DALYinh + chemprob$DALYoral,
+  Pathogens = probs$DALY,
+  Chemicals = chemprob$DALYoral +  chemprob$DALYinh,
+  SA1Chemicals = chemprob$DALYSAoral + chemprob$DALYSAinh
+)
+
+
+# Convert to long format for ggplot
+daly_long <- daly_df %>%
+  pivot_longer(cols = c(Pathogens, Chemicals, SA1Chemicals),
+               names_to = "DALY_type",
+               values_to = "DALY_value")
+
+combinedchemicalrisk <- chemprob$DALYinh + chemprob$DALYoral
+#Combined risk for modification 1- bladder vs liver cancer
+combinedchemicalriskSA <- chemprob$DALYSAinh + chemprob$DALYSAoral
+
+chemprob$totalriskSA <- combinedchemicalriskSA
+chemprob$totalrisk <- combinedchemicalrisk
+
+conservativedbprisk <- chemprob %>%
+  filter(compound %in% c("NDMA", "TCM"))
+
+
+
+```
+
+
+```{r}
+pathogeneffect <- ggplot(probs, aes(x = DALY, fill = compound)) +   geom_histogram(position = "stack", bins = 50) +
+  labs(title = "Disability Adjusted Life Years Lost to Drinking Water Contaminants",
+       x = "DALYs Lost Due To Contaminant",
+       y = "Monte Carlo Iterations",
+       fill = "Category") +
+  theme_minimal() + xlim(-100, 2000)
+pathogeneffect
+
+chemeffect <- ggplot(chemprob, aes(x = totalrisk, fill = compound)) +   geom_histogram(position = "stack", bins = 50) +
+  labs(title = "Disability Adjusted Life Years Lost to Drinking Water Contaminants",
+       x = "DALYs Lost Due To Contaminant",
+       y = "Monte Carlo Iterations",
+       fill = "Category") +
+  theme_minimal() + xlim(-100, 2000)
+
+chemeffect
+
+chemeffectcon <- ggplot(conservativedbprisk, aes(x = totalrisk, fill = compound)) +   geom_histogram(position = "stack", bins = 50) +
+  labs(title = "Conservative DALYs lost to Drinking Water Contaminants",
+       x = "DALYs Lost Due To Contaminant",
+       y = "Monte Carlo Iterations",
+       fill = "Category") +
+  theme_minimal() + xlim(-100, 2000)
+chemeffectcon
+```
+
+
+```{r}
+
+dalychembiograph <- daly_long %>%
+  filter(DALY_type == "Pathogens" | DALY_type == "Chemicals")
+chembio <-ggplot(dalychembiograph, aes(x = DALY_value, fill = DALY_type)) +
+  geom_histogram(position = "stack", bins = 50) +
+  labs(title = "Disability Adjusted Life Years Lost to Drinking Water Contaminants",
+       x = "DALYs Lost Due To Contaminant",
+       y = "Monte Carlo Iterations",
+       fill = "Category") +
+  theme_minimal() + xlim(-100, 3000) + ylim(0, 4e05)
+
+chembio
+
+```

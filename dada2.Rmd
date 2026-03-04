@@ -1,0 +1,56 @@
+---
+title: "dada2 pipeline"
+author: "Mercy Neal"
+date: "2025-10-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(dada2)
+
+library(Biostrings)
+library(tidyverse)
+```
+
+
+
+```{r}
+# Read in your FASTA file
+csvseqs <- read.csv("rarefied_decon_asv_taxa_15000.csv")
+seqs <- readDNAStringSet("rarifiedwithno.fasta")
+
+```
+
+
+
+
+``` {r}
+
+##CHANGE TO RIGHT SILVA FILE
+# Assign taxonomy
+taxa <- assignTaxonomy(seqs, "silva_nr99_v138.2_toGenus_trainset.fa.gz", multithread = TRUE)
+```
+
+```{r}
+saveRDS(taxa, 'taxa1.rds')
+```
+
+
+
+```{r}
+#add species, then merge by seq
+
+taxagenus <- readRDS('taxa1.rds')
+
+
+```
+
+
+```{r}
+sptaxa <- addSpecies(taxagenus, "silva_v138.2_assignSpecies.fa.gz")
+```
+```{r}
+
+combinedtaxa <- left_join(taxagenus, csvseqs, by = 'names')
+```
+
